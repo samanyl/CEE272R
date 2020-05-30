@@ -89,13 +89,155 @@ for i = 1:100
         ham.P_opt = [0;0;0];
     end
 
-    loss = (L2 + L3 - (sum(dam.P_opt,'all') + sum(ham.P_opt,'all')));
+    loss = 1000 * (L2 + L3 - (sum(dam.P_opt,'all') + sum(ham.P_opt,'all')));
 
     if loss < 0
-        cost(i) = 1000 * (dam.Cost + ham.Cost);
+        cost(i) = ((1000*dam.P_opt(1))^2 + (1000*dam.P_opt(2))^2 + 2) + 3 * ((1000*ham.P_opt(1))^2 + (1000*ham.P_opt(2))^2 + 2);
     else
-        cost(i) = 1000 * (dam.Cost + ham.Cost) + loss;
+        cost(i) = ((1000*dam.P_opt(1))^2 + (1000*dam.P_opt(2))^2 + 2) + 3 * ((1000*ham.P_opt(1))^2 + (1000*ham.P_opt(2))^2 + 2) + loss;
     end
 end
 
 histogram(cost)
+
+%% Cost Boxplots - costs
+
+A1_1 = A1/2;
+A2_1 = A2/2;
+
+for i = 1:100
+    CQ = [1; 1; 0];
+    T = 3;
+    t = 24; % 24 hours in one day
+    sigma1_DA = (A1_1 * (1 - exp(-t/T)))/1000;
+    sigma2_DA = (A2_1 * (1 - exp(-t/T)))/1000;
+    C = 2;
+    PD = [0;
+          normrnd(L2,sigma1_DA) + zscore*sigma1_DA;
+          normrnd(L3,sigma2_DA) + zscore*sigma2_DA];
+
+    dam=DayAhead(Y,PGl,PGu,PD,PF,thetal,thetau,CQ,C,slack); % Day Ahead Dispatch
+
+    s = sum(dam.P_opt,'all');
+    t = 1; % 1 hour in 1 hour
+    sigma1_HA = (A1_1 * (1 - exp(-t/T)))/1000;
+    sigma2_HA = (A2_1 * (1 - exp(-t/T)))/1000;
+    check = normrnd(L2,sigma1_HA) + zscore * sigma1_HA + normrnd(L3,sigma2_HA) + zscore * sigma2_HA;
+
+    if s < check % check if hour ahead dispatch is needed
+        CQ = [3; 3; 0];
+        C = 6;
+        PD = [-dam.P_opt(1);
+               normrnd(L2,sigma1_HA) + zscore * sigma1_HA - dam.P_opt(2);
+               normrnd(L3,sigma2_HA) + zscore * sigma2_HA];
+
+        ham=DayAhead(Y,PGl,PGu,PD,PF,thetal,thetau,CQ,C,slack); % Hour Ahead Dispatch
+    else
+        ham.Cost = 0;
+        ham.P_opt = [0;0;0];
+    end
+
+    loss = 1000 * (L2 + L3 - (sum(dam.P_opt,'all') + sum(ham.P_opt,'all')));
+
+    if loss < 0
+        cost2(i) = ((1000*dam.P_opt(1))^2 + (1000*dam.P_opt(2))^2 + 2) + 3 * ((1000*ham.P_opt(1))^2 + (1000*ham.P_opt(2))^2 + 2);
+    else
+        cost2(i) = ((1000*dam.P_opt(1))^2 + (1000*dam.P_opt(2))^2 + 2) + 3 * ((1000*ham.P_opt(1))^2 + (1000*ham.P_opt(2))^2 + 2) + loss;
+    end
+end
+
+A1_1 = 2 * A1;
+A2_1 = 2 * A1;
+
+for i = 1:100
+    CQ = [1; 1; 0];
+    T = 3;
+    t = 24; % 24 hours in one day
+    sigma1_DA = (A1_1 * (1 - exp(-t/T)))/1000;
+    sigma2_DA = (A2_1 * (1 - exp(-t/T)))/1000;
+    C = 2;
+    PD = [0;
+          normrnd(L2,sigma1_DA) + zscore*sigma1_DA;
+          normrnd(L3,sigma2_DA) + zscore*sigma2_DA];
+
+    dam=DayAhead(Y,PGl,PGu,PD,PF,thetal,thetau,CQ,C,slack); % Day Ahead Dispatch
+
+    s = sum(dam.P_opt,'all');
+    t = 1; % 1 hour in 1 hour
+    sigma1_HA = (A1_1 * (1 - exp(-t/T)))/1000;
+    sigma2_HA = (A2_1 * (1 - exp(-t/T)))/1000;
+    check = normrnd(L2,sigma1_HA) + zscore * sigma1_HA + normrnd(L3,sigma2_HA) + zscore * sigma2_HA;
+
+    if s < check % check if hour ahead dispatch is needed
+        CQ = [3; 3; 0];
+        C = 6;
+        PD = [-dam.P_opt(1);
+               normrnd(L2,sigma1_HA) + zscore * sigma1_HA - dam.P_opt(2);
+               normrnd(L3,sigma2_HA) + zscore * sigma2_HA];
+
+        ham=DayAhead(Y,PGl,PGu,PD,PF,thetal,thetau,CQ,C,slack); % Hour Ahead Dispatch
+    else
+        ham.Cost = 0;
+        ham.P_opt = [0;0;0];
+    end
+
+    loss = 1000* (L2 + L3 - (sum(dam.P_opt,'all') + sum(ham.P_opt,'all')));
+
+    if loss < 0
+        cost3(i) = ((1000*dam.P_opt(1))^2 + (1000*dam.P_opt(2))^2 + 2) + 3 * ((1000*ham.P_opt(1))^2 + (1000*ham.P_opt(2))^2 + 2);
+    else
+        cost3(i) = ((1000*dam.P_opt(1))^2 + (1000*dam.P_opt(2))^2 + 2) + 3 * ((1000*ham.P_opt(1))^2 + (1000*ham.P_opt(2))^2 + 2) + loss;
+    end
+end
+
+%% Cost Boxplot - plots
+
+boxplot([cost(:), cost2(:), cost3(:)]);
+
+%% Conservative Alphas
+zscore = 2.33; % alpha = 0.01
+% zscore = 1.96; % alpha = 0.05
+
+for i = 1:100
+    CQ = [1; 1; 0];
+    T = 3;
+    t = 24; % 24 hours in one day
+    sigma1_DA = (A1 * (1 - exp(-t/T)))/1000;
+    sigma2_DA = (A2 * (1 - exp(-t/T)))/1000;
+    C = 2;
+    PD = [0;
+          normrnd(L2,sigma1_DA) + zscore*sigma1_DA;
+          normrnd(L3,sigma2_DA) + zscore*sigma2_DA];
+
+    dam=DayAhead(Y,PGl,PGu,PD,PF,thetal,thetau,CQ,C,slack); % Day Ahead Dispatch
+
+    s = sum(dam.P_opt,'all');
+    t = 1; % 1 hour in 1 hour
+    sigma1_HA = (A1 * (1 - exp(-t/T)))/1000;
+    sigma2_HA = (A2 * (1 - exp(-t/T)))/1000;
+    check = normrnd(L2,sigma1_HA) + zscore * sigma1_HA + normrnd(L3,sigma2_HA) + zscore * sigma2_HA;
+
+    if s < check % check if hour ahead dispatch is needed
+        CQ = [3; 3; 0];
+        C = 6;
+        PD = [-dam.P_opt(1);
+               normrnd(L2,sigma1_HA) + zscore * sigma1_HA - dam.P_opt(2);
+               normrnd(L3,sigma2_HA) + zscore * sigma2_HA];
+
+        ham=DayAhead(Y,PGl,PGu,PD,PF,thetal,thetau,CQ,C,slack); % Hour Ahead Dispatch
+    else
+        ham.Cost = 0;
+        ham.P_opt = [0;0;0];
+    end
+
+    loss = 1000 *(L2 + L3 - (sum(dam.P_opt,'all') + sum(ham.P_opt,'all')));
+
+    if loss < 0
+        costA(i) = ((1000*dam.P_opt(1))^2 + (1000*dam.P_opt(2))^2 + 2) + 3 * ((1000*ham.P_opt(1))^2 + (1000*ham.P_opt(2))^2 + 2);
+    else
+        costA(i) = ((1000*dam.P_opt(1))^2 + (1000*dam.P_opt(2))^2 + 2) + 3 * ((1000*ham.P_opt(1))^2 + (1000*ham.P_opt(2))^2 + 2) + loss;
+    end
+end
+
+%%
+histogram(costA)
