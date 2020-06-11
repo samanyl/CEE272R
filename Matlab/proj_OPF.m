@@ -1,4 +1,4 @@
-% Stanford University - CEE272R - Spring 2017
+% Stanford University - CEE272R - Spring 2020
 
 % Inputs:
 % QD - max quantity that can be sold/discharged in a single period
@@ -53,6 +53,12 @@ cvx_begin
     0 <= s <= S;
     0 <= (qR + qRD) <= QR;
     0 <= (qD + qRU) <= QD;
+    0 <= (qD + qRD) <= QD; % to enforce no charging and discharging at the same time
+    0 <= (qR + qRU) <= QR; % to enforce no charging and discharging at the same time
+    0 <= qRU;
+    0 <= qRD;
+    0 <= qR;
+    0 <= qD;
 
 cvx_end
 
